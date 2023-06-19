@@ -36,3 +36,5 @@ func main() {
 
 //good structured packages required for microservices
 //doing this deliberately for merge conflicts
+//start to refactor , need to bring in better practices and patterns to structure the code
+//lot of code in func main , need to think about testing
