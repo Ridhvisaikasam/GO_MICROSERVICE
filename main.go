@@ -1,7 +1,7 @@
 package main
 
 import (
-	//need to import handlers package
+	"go_microservice/handlers"
 	"log"
 	"net/http"
 	"os"
