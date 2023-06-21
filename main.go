@@ -13,11 +13,13 @@ func main() {
 	l := log.New(os.Stdout, "product-api", log.LstdFlags)
 	//all the content in handle func into an independent object
 	hh := handlers.NewHello(l)
+	gh := handlers.NewGoodbye(l)
 
 	//new servemux
 	sm := http.NewServeMux()
 	//register handler to servemux
 	sm.Handle("/", hh)
+	sm.Handle("/goodbye", gh)
 
 	//register handler with the server
 	//converting function to handle and registering to defaultservemux(server multiplexer for multiple paths)
