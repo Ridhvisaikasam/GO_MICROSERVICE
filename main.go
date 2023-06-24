@@ -17,12 +17,14 @@ func main() {
 	//all the content in handle func into an independent object
 	hh := handlers.NewHello(l)
 	gh := handlers.NewGoodbye(l)
+	ph := handlers.NewProducts(l)
 
 	//new servemux
 	sm := http.NewServeMux()
-	//register handler to servemux
+	//register handler to servemux ,,, callls the serve http associated with it
 	sm.Handle("/", hh)
 	sm.Handle("/goodbye", gh)
+	sm.Handle("/products/", ph)
 
 	/*timeouts are imp -- resources are finite , if client pauses (blocked conn) ,,,
 	multiple blocked connections -- server fails
@@ -33,8 +35,8 @@ func main() {
 		Addr:         ":9090",
 		Handler:      sm,
 		IdleTimeout:  120 * time.Second,
-		ReadTimeout:  1 * time.Second,
-		WriteTimeout: 1 * time.Second,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	//register handler with the server
@@ -51,9 +53,12 @@ func main() {
 	//listen at port,serve handler(interface implementing servehttp)(nil->default servemux(redirecting paths))
 	//http.ListenAndServe(":9090", sm)
 
+	//starting a server
 	//refactor a little because of shutdown
 	//handling in go func so its not gonna block
 	go func() {
+		l.Println("Starting server on port 9090")
+
 		err := s.ListenAndServe()
 		if err != nil {
 			//print followed by os.exit()
@@ -62,7 +67,7 @@ func main() {
 	}()
 
 	//broadcast a message on a channel whenever os is interrupted or killed
-	sigChan := make(chan os.Signal)
+	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt)
 	signal.Notify(sigChan, os.Kill)
 

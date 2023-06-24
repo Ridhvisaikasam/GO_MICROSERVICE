@@ -23,6 +23,7 @@ func NewHello(l *log.Logger) *Hello {
 func (h *Hello) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	//dont create concrete objects inside handlers like loggers or db
 	h.l.Println("hello")
+	//reading the body from req
 	d, err := ioutil.ReadAll(r.Body)
 	//error handling
 	if err != nil {
