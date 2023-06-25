@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 // main entry point
@@ -15,16 +17,33 @@ func main() {
 
 	l := log.New(os.Stdout, "product-api(logger)", log.LstdFlags)
 	//all the content in handle func into an independent object
-	hh := handlers.NewHello(l)
-	gh := handlers.NewGoodbye(l)
+	//hh := handlers.NewHello(l)
+	//gh := handlers.NewGoodbye(l)
 	ph := handlers.NewProducts(l)
 
 	//new servemux
-	sm := http.NewServeMux()
+	//sm := http.NewServeMux()
+	//refactoring by using gorilla mux router
+	sm := mux.NewRouter()
+	//using subrouters for more flexibility and easy usage of middleware
+	getRouter := sm.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/", ph.GetProducts)
+
+	putRouter := sm.Methods(http.MethodPut).Subrouter()
+	//gorilla automatically pulls out id
+	putRouter.HandleFunc("/{id:[0-9]+}", ph.UpdateProducts)
+	//goes into handle func only after middleware
+	putRouter.Use(ph.MiddlewareProductValidation)
+
+	postRouter := sm.Methods(http.MethodPost).Subrouter()
+	postRouter.HandleFunc("/", ph.AddProducts)
+	//goes into handle func only after middleware
+	postRouter.Use(ph.MiddlewareProductValidation)
+
 	//register handler to servemux ,,, callls the serve http associated with it
-	sm.Handle("/", hh)
-	sm.Handle("/goodbye", gh)
-	sm.Handle("/products/", ph)
+	//sm.Handle("/", hh)
+	//sm.Handle("/goodbye", gh)
+	//sm.Handle("/products/", ph)
 
 	/*timeouts are imp -- resources are finite , if client pauses (blocked conn) ,,,
 	multiple blocked connections -- server fails
