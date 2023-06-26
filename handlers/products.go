@@ -1,7 +1,9 @@
+// includes all server side logics like middleware and handling requests
 package handlers
 
 import (
 	"context"
+	"fmt"
 	"go_microservice/data"
 	"log"
 	"net/http"
@@ -136,7 +138,7 @@ func (p *Products) UpdateProducts(rw http.ResponseWriter, r *http.Request) {
 
 type KeyProduct struct{}
 
-// middleware validates the product in request and calls next if ok
+// middleware validates the product in request by converting it from json to go and calls next if ok
 func (p *Products) MiddlewareProductValidation(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		prod := data.Product{}
@@ -145,6 +147,19 @@ func (p *Products) MiddlewareProductValidation(next http.Handler) http.Handler {
 		if err != nil {
 			p.l.Println("[ERROR] deserializing product", err)
 			http.Error(rw, "Error reading product", http.StatusBadRequest)
+			//stop handler chain in case of error
+			return
+		}
+
+		//validate the product
+		err = prod.Validate()
+		if err != nil {
+			p.l.Println("[ERROR] validating product", err)
+			http.Error(
+				rw,
+				fmt.Sprintf("Error validating product %s", err),
+				http.StatusBadRequest,
+			)
 			//stop handler chain in case of error
 			return
 		}
