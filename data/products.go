@@ -12,15 +12,40 @@ import (
 )
 
 // Product defines the structure for an API product
+// swagger:model
 type Product struct {
-	ID          int     `json:"id"`
-	Name        string  `json:"name" validate:"required"`
-	Description string  `json:"description"`
-	Price       float32 `json:"price" validate:"gt=0"`
-	SKU         string  `json:"sku" validate:"required,sku"`
-	CreatedOn   string  `json:"-"`
-	UpdatedOn   string  `json:"-"`
-	DeletedOn   string  `json:"-"`
+	// the id for the product
+	//
+	// required: false
+	// min: 1
+	ID int `json:"id"` // Unique identifier for the product
+
+	// the name for this poduct
+	//
+	// required: true
+	// max length: 255
+	Name string `json:"name" validate:"required"`
+
+	// the description for this poduct
+	//
+	// required: false
+	// max length: 10000
+	Description string `json:"description"`
+
+	// the price for the product
+	//
+	// required: true
+	// min: 0.01
+	Price float64 `json:"price" validate:"required,gt=0"`
+
+	// the SKU for the product
+	//
+	// required: true
+	// pattern: [a-z]+-[a-z]+-[a-z]+
+	SKU       string `json:"sku" validate:"sku"`
+	CreatedOn string `json:"-"`
+	UpdatedOn string `json:"-"`
+	DeletedOn string `json:"-"`
 }
 
 // creating validator
@@ -77,6 +102,18 @@ func UpdateProduct(id int, p *Product) error {
 
 	p.ID = id
 	productList[pos] = p
+	return nil
+}
+
+func DeleteProduct(id int) error {
+	_, pos, err := findProduct(id)
+	if err != nil {
+		return err
+	}
+
+	productList[pos] = productList[len(productList)-1]
+	productList = productList[:len(productList)-1]
+
 	return nil
 }
 
