@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"go_microservice/data"
 	"go_microservice/handlers"
 	"log"
 	"net/http"
@@ -17,10 +18,11 @@ import (
 func main() {
 
 	l := log.New(os.Stdout, "product-api(logger)", log.LstdFlags)
+	v := data.NewValidation()
 	//all the content in handle func into an independent object
 	//hh := handlers.NewHello(l)
 	//gh := handlers.NewGoodbye(l)
-	ph := handlers.NewProducts(l)
+	ph := handlers.NewProducts(l, v)
 
 	//new servemux
 	//sm := http.NewServeMux()

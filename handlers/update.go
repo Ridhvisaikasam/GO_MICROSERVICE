@@ -3,17 +3,22 @@ package handlers
 import (
 	"go_microservice/data"
 	"net/http"
-	"strconv"
-
-	"github.com/gorilla/mux"
 )
+
+// swagger:route PUT /products products updateProduct
+// Update a products details
+//
+// responses:
+//	201: noContentResponse
+//  404: errorResponse
+//  422: errorValidation
 
 func (p *Products) UpdateProducts(rw http.ResponseWriter, r *http.Request) {
 	p.l.Println("Handle PUT Products")
 
 	//getting id from uri but with help of gorilla
-	vars := mux.Vars(r)
-	idString := vars["id"]
+	/*vars := mux.Vars(r)
+	idString := vars["id"]*/
 
 	//getting update details from req body
 	/*prod := &data.Product{}
@@ -22,6 +27,7 @@ func (p *Products) UpdateProducts(rw http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(rw, "cant decode from json", http.StatusBadRequest)
 	}*/
+
 	//now getting prod from context from prev middleware
 	prod := r.Context().Value(KeyProduct{}).(data.Product)
 
@@ -41,13 +47,13 @@ func (p *Products) UpdateProducts(rw http.ResponseWriter, r *http.Request) {
 
 	idString := g[0][1]*/
 	//convert string to int
-	id, err := strconv.Atoi(idString)
+	/*id, err := strconv.Atoi(idString)
 	if err != nil {
 		http.Error(rw, "Invalid Index", http.StatusBadRequest)
-	}
+	}*/
 
 	//updating in datastore
-	err = data.UpdateProduct(id, &prod)
+	err := data.UpdateProduct(&prod)
 	if err == data.ErrorProductNotFound {
 		http.Error(rw, "Error not found", http.StatusNotFound)
 		return
