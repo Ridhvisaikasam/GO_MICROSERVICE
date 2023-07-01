@@ -2,13 +2,7 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"regexp"
-	"time"
-
-	"github.com/go-playground/validator/v10"
 )
 
 // Product defines the structure for an API product
@@ -42,51 +36,24 @@ type Product struct {
 	//
 	// required: true
 	// pattern: [a-z]+-[a-z]+-[a-z]+
-	SKU       string `json:"sku" validate:"sku"`
-	CreatedOn string `json:"-"`
-	UpdatedOn string `json:"-"`
-	DeletedOn string `json:"-"`
-}
-
-// creating validator
-func (p *Product) Validate() error {
-	validate := validator.New()
-
-	//creating custom validation functions and registering with a name
-	validate.RegisterValidation("sku", validateSKU)
-
-	return validate.Struct(p)
-}
-
-// fl indicates the value to be checked is the field value where we use this custom validater
-func validateSKU(fl validator.FieldLevel) bool {
-	//sku is of format abc-abcd-abcde
-	reg := regexp.MustCompile(`[a-z]+-[a-z]+-[a-z]+`)
-	matches := reg.FindAllString(fl.Field().String(), -1)
-	//exactly one sku
-	if len(matches) != 1 {
-		return false
-	}
-
-	return true
-}
-
-func (p *Product) FromJSON(r io.Reader) error {
-	e := json.NewDecoder(r)
-	return e.Decode(p)
+	SKU string `json:"sku" validate:"sku"`
 }
 
 // so that we can add function
 type Products []*Product
 
-func (p *Products) ToJSON(w io.Writer) error {
-	e := json.NewEncoder(w)
-	return e.Encode(p)
-}
-
 // always to try to abstract the logic where data is coming from
 func GetProducts() Products {
 	return productList
+}
+
+func GetProductByID(id int) (Product, error) {
+	prod, _, err := findProductByID(id)
+	if err != nil {
+		return *prod, err
+	}
+
+	return *prod, nil
 }
 
 func AddProduct(p *Product) {
@@ -94,19 +61,18 @@ func AddProduct(p *Product) {
 	productList = append(productList, p)
 }
 
-func UpdateProduct(id int, p *Product) error {
-	_, pos, err := findProduct(id)
+func UpdateProduct(p *Product) error {
+	_, pos, err := findProductByID(p.ID)
 	if err != nil {
 		return err
 	}
 
-	p.ID = id
 	productList[pos] = p
 	return nil
 }
 
 func DeleteProduct(id int) error {
-	_, pos, err := findProduct(id)
+	_, pos, err := findProductByID(id)
 	if err != nil {
 		return err
 	}
@@ -117,7 +83,7 @@ func DeleteProduct(id int) error {
 	return nil
 }
 
-func findProduct(id int) (*Product, int, error) {
+func findProductByID(id int) (*Product, int, error) {
 	for i, p := range productList {
 		if p.ID == id {
 			return p, i, nil
@@ -127,6 +93,7 @@ func findProduct(id int) (*Product, int, error) {
 	return nil, -1, ErrorProductNotFound
 }
 
+// ErrProductNotFound is an error raised when a product can not be found in the database
 var ErrorProductNotFound = fmt.Errorf("Product not found")
 
 func getNextID() int {
@@ -141,8 +108,6 @@ var productList = Products{
 		Description: "Frothy milky coffee",
 		Price:       2.45,
 		SKU:         "abc323",
-		CreatedOn:   time.Now().UTC().String(),
-		UpdatedOn:   time.Now().UTC().String(),
 	},
 	&Product{
 		ID:          2,
@@ -150,7 +115,5 @@ var productList = Products{
 		Description: "Short and strong coffee without milk",
 		Price:       1.99,
 		SKU:         "fjd34",
-		CreatedOn:   time.Now().UTC().String(),
-		UpdatedOn:   time.Now().UTC().String(),
 	},
 }

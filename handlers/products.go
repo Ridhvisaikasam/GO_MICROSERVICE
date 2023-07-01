@@ -15,43 +15,42 @@
 package handlers
 
 import (
-	"context"
 	"fmt"
 	"go_microservice/data"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
-// A list of products returns in the response
-// swagger:response productsResponse
-type productsResponseWrapper struct {
-	// All products in the system
-	// in: body
-	Body []data.Product
-}
-
-// Nothing returns in the response
-// swagger:response noContent
-type productsNoContent struct {
-}
-
-// swagger:parameters deleteProduct
-type productIDParameterWrapper struct {
-	// The id of product to be deleted from data store
-	// in: path
-	// required: true
-	ID int `json:"id"`
-}
+// KeyProduct is a key used for the Product object in the context
+type KeyProduct struct{}
 
 // the above thing was reflected by swagger and make file
 // includes all server side logics like middleware and handling requests
 
 type Products struct {
 	l *log.Logger
+	v *data.Validation
 }
 
-func NewProducts(l *log.Logger) *Products {
-	return &Products{l}
+// NewProducts returns a new products handler with the given logger , validator
+func NewProducts(l *log.Logger, v *data.Validation) *Products {
+	return &Products{l, v}
+}
+
+// ErrInvalidProductPath is an error message when the product path is not valid
+var ErrInvalidProductPath = fmt.Errorf("Invalid Path, path should be /products/[id]")
+
+// GenericError is a generic error message returned by a server
+type GenericError struct {
+	Message string `json:"message"`
+}
+
+// ValidationError is a collection of validation error messages
+type ValidationError struct {
+	Messages []string `json:"messages"`
 }
 
 //handled by ux router
@@ -175,39 +174,20 @@ func NewProducts(l *log.Logger) *Products {
 	}
 }*/
 
-type KeyProduct struct{}
+// getProductID returns the product ID from the URL
+// Panics if cannot convert the id into an integer
+// this should never happen as the router ensures that
+// this is a valid number
+func getProductID(r *http.Request) int {
+	// parse the product id from the url
+	vars := mux.Vars(r)
 
-// middleware validates the product in request by converting it from json to go and calls next if ok
-func (p *Products) MiddlewareProductValidation(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		prod := data.Product{}
+	// convert the id into an integer and return
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		// should never happen
+		panic(err)
+	}
 
-		err := prod.FromJSON(r.Body)
-		if err != nil {
-			p.l.Println("[ERROR] deserializing product", err)
-			http.Error(rw, "Error reading product", http.StatusBadRequest)
-			//stop handler chain in case of error
-			return
-		}
-
-		//validate the product
-		err = prod.Validate()
-		if err != nil {
-			p.l.Println("[ERROR] validating product", err)
-			http.Error(
-				rw,
-				fmt.Sprintf("Error validating product %s", err),
-				http.StatusBadRequest,
-			)
-			//stop handler chain in case of error
-			return
-		}
-
-		//add the product to the context
-		ctx := context.WithValue(r.Context(), KeyProduct{}, prod)
-		r = r.WithContext(ctx)
-
-		//Call the next handler , which can be another middleware or final handler
-		next.ServeHTTP(rw, r)
-	})
+	return id
 }
